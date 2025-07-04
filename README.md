@@ -1,3 +1,3 @@
 # Wallet Watcher CLI
 
-> A lightweight command-line interface for managing expenses.
+> A lightweight command-line interface for managing personal finance.
