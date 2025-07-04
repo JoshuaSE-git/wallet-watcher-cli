@@ -3,17 +3,17 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "my-cli-tool"
+name = "wallet-watcher-cli"
 version = "0.1.0"
-description = "A simple command-line tool built with Python"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+description = "A lightweight command-line tool to manage personal expenses"
+authors = [{ name = "Joshua Emralino", email = "jemralino@student.sdccd.edu" }]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = []
 
 [project.scripts]
-mycli = "my_cli_tool.cli:main"
+mycli = "wallet_watcher.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
