@@ -1,5 +1,40 @@
-venv/
+# === Python build artifacts ===
 __pycache__/
-.DS_Store
-.env
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+*.pyo
+
+# === Installer/build directories ===
+build/
+dist/
+*.spec
+
+# === Package metadata ===
+*.egg-info/
+.eggs/
+*.manifest
+*.DS_Store
+
+# === Virtual environments ===
+venv/
+.env/
+.env.*  # e.g. .env.local, .env.dev
+
+# === Wheel and other distributions ===
+*.whl
+*.tar.gz
+*.zip
+
+# === Test/coverage artifacts ===
+htmlcov/
+.coverage
+.tox/
+.cache/
+.pytest_cache/
+
+# === IDE/editor settings ===
+.vscode/
+.idea/
 
