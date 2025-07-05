@@ -1,4 +1,4 @@
-FIELD_NAMES = ["ID", "Date", "Description", "Amount"]
+FIELD_NAMES = ["id", "date", "category", "description", "amount"]
 
 LINUX = "linux"
 MACOS = "darwin"
