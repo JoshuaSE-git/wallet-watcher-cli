@@ -38,3 +38,6 @@ htmlcov/
 .vscode/
 .idea/
 
+# === Other ===
+notes.txt
+
