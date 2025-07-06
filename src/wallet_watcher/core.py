@@ -2,24 +2,31 @@ import datetime as dt
 import copy
 
 from typing import List, Set
-from _types import Expense
-from constants import DATE_FORMAT_STRING
+from wallet_watcher._types import Expense
+from wallet_watcher.constants import DATE_FORMAT_STRING
 
 
 def add_expense(
-    id: int,
+    data: List[Expense],
     description: str,
     amount: float,
     date: str | None = None,
     category: str | None = None,
 ) -> Expense:
+    if amount <= 0:
+        raise ValueError("Expense amount must be greater than zero")
+
     if not date:
         date = dt.date.today().strftime(DATE_FORMAT_STRING)
-
     if not category:
         category = "General"
+    id: int = get_next_id(data)
 
     return Expense(id, date, category, description, amount)
+
+
+def get_next_id(data: List[Expense]) -> int:
+    return max((expense.id for expense in data), default=0) + 1
 
 
 def delete_expense(data: List[Expense], *id: int) -> List[Expense]:
