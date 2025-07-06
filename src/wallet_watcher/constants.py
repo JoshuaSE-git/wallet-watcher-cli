@@ -13,3 +13,5 @@ PATH_WINDOWS_DATA = "~/AppData/Local"
 
 APP_DIR_NAME = "wallet-watcher/"
 USER_DATA_FILENAME = "finances.csv"
+
+DATE_FORMAT_STRING = "%Y-%m-%d"
