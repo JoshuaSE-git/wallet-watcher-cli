@@ -15,3 +15,6 @@ APP_DIR_NAME = "wallet-watcher/"
 USER_DATA_FILENAME = "finances.csv"
 
 DATE_FORMAT_STRING = "%Y-%m-%d"
+
+DEFAULT_DESCRIPTION = "N/A"
+DEFAULT_CATEGORY = "General"
