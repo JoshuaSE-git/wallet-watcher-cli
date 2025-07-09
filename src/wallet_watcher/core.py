@@ -18,7 +18,7 @@ def add_expense(
         raise ValueError("Amount must be greater than 0.01")
 
     if not date:
-        date = dt.datetime.today()
+        date = dt.datetime.today().date()
     if not category:
         category = DEFAULT_CATEGORY
     if not description:
