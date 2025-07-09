@@ -16,11 +16,17 @@ class Expense:
 
 
 class Comparator(Enum):
-    LT = 1
-    LTE = 2
-    GT = 3
-    GTE = 4
-    EQ = 5
+    LESS_EQUAL = 1
+    GREATER_EQUAL = 2
+    EQUAL = 3
+
+
+class ExpenseField(Enum):
+    ID = 1
+    DATE = 2
+    CATEGORY = 3
+    AMOUNT = 4
+    DESCRIPTION = 5
 
 
 FilterStrategy: TypeAlias = Callable[[Expense], bool]

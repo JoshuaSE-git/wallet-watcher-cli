@@ -1,13 +1,10 @@
 import copy
 import datetime as dt
 
-from typing import List, Set
+from typing import List, Set, Union
 from decimal import Decimal
-from wallet_watcher._types import Expense, FilterStrategy, Comparator
-from wallet_watcher.constants import (
-    DEFAULT_CATEGORY,
-    DEFAULT_DESCRIPTION,
-)
+from wallet_watcher._types import Expense, FilterStrategy, Comparator, ExpenseField
+from wallet_watcher.constants import DEFAULT_CATEGORY, DEFAULT_DESCRIPTION, FIELD_MAP
 
 
 def add_expense(
@@ -26,12 +23,12 @@ def add_expense(
         category = DEFAULT_CATEGORY
     if not description:
         description = DEFAULT_DESCRIPTION
-    id: int = get_next_id(data)
+    id: int = _get_next_id(data)
 
     return Expense(id, date, category, description, amount)
 
 
-def get_next_id(data: List[Expense]) -> int:
+def _get_next_id(data: List[Expense]) -> int:
     return max((expense.id for expense in data), default=0) + 1
 
 
@@ -47,37 +44,30 @@ def filter_expenses(
     return [expense for expense in data if filter_strategy(expense)]
 
 
-def filter_by_id(*filter_ids: int) -> FilterStrategy:
-    id_set: Set[int] = set(filter_ids)
+def filter_by_matching(
+    field: ExpenseField, *values: Union[dt.date, Decimal, str, int]
+) -> FilterStrategy:
+    value_set: Set[Union[dt.date, Decimal, str, int]] = set(values)
 
     def strategy(expense: Expense) -> bool:
-        return expense.id in id_set
+        return getattr(expense, FIELD_MAP[field]) in value_set
 
     return strategy
 
 
-def filter_by_category(*categories: str) -> FilterStrategy:
-    category_set: Set[str] = set(categories)
-
-    def strategy(expense: Expense) -> bool:
-        return expense.category in category_set
-
-    return strategy
-
-
-def filter_by_price(amount: Decimal, comparator: Comparator = Comparator.EQ):
+def filter_by_comparison(
+    field: ExpenseField,
+    comparator: Comparator,
+    value: Union[dt.date, Decimal, str, int],
+) -> FilterStrategy:
     def strategy(expense: Expense) -> bool:
         match comparator:
-            case Comparator.LT:
-                return expense.amount < amount
-            case Comparator.LTE:
-                return expense.amount <= amount
-            case Comparator.GT:
-                return expense.amount > amount
-            case Comparator.GTE:
-                return expense.amount >= amount
-            case Comparator.EQ:
-                return expense.amount == amount
+            case Comparator.LESS_EQUAL:
+                return getattr(expense, FIELD_MAP[field]) <= value
+            case Comparator.GREATER_EQUAL:
+                return getattr(expense, FIELD_MAP[field]) >= value
+            case Comparator.EQUAL:
+                return getattr(expense, FIELD_MAP[field]) == value
 
     return strategy
 

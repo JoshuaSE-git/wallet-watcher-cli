@@ -1,4 +1,17 @@
+from wallet_watcher._types import ExpenseField
+
 FIELD_NAMES = ["id", "date", "category", "description", "amount"]
+
+FIELD_LIST = []
+
+FIELD_MAP = {
+    ExpenseField.AMOUNT: "amount",
+    ExpenseField.ID: "id",
+    ExpenseField.CATEGORY: "category",
+    ExpenseField.DATE: "date",
+    ExpenseField.DESCRIPTION: "description",
+}
+
 
 LINUX = "linux"
 MACOS = "darwin"

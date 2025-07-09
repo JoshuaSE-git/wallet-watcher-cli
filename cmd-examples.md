@@ -57,6 +57,8 @@ Other filters:
   --category CATEGORY
   --min-amount AMOUNT
   --max-amount AMOUNT
+  --min-date DATE
+  --max-date DATE
   --desc DESCRIPTION
 
 Sorting:
