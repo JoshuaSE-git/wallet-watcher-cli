@@ -174,6 +174,56 @@ def test_delete_expenses_matching_combo(expense_list):
     assert new_data == correct_data
 
 
+def test_delete_expenses_comparison_amount_max(expense_list):
+    strategy = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.GREATER_THAN, Decimal("20.50")
+    )
+    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    correct_data: List[Expense] = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert new_data == correct_data
+
+
+def test_delete_expenses_comparison_amount_min(expense_list):
+    strategy = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.LESS_THAN, Decimal("20.50")
+    )
+    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    correct_data: List[Expense] = [
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert new_data == correct_data
+
+
 @pytest.fixture
 def expense_list():
     data: List[Expense] = [

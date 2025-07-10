@@ -62,9 +62,13 @@ def filter_by_comparison(
 ) -> FilterStrategy:
     def strategy(expense: Expense) -> bool:
         match comparator:
-            case Comparator.LESS_EQUAL:
+            case Comparator.LESS_THAN:
+                return getattr(expense, FIELD_MAP[field]) < value
+            case Comparator.LESS_THAN_EQUAL:
                 return getattr(expense, FIELD_MAP[field]) <= value
-            case Comparator.GREATER_EQUAL:
+            case Comparator.GREATER_THAN:
+                return getattr(expense, FIELD_MAP[field]) > value
+            case Comparator.GREATER_THAN_EQUAL:
                 return getattr(expense, FIELD_MAP[field]) >= value
             case Comparator.EQUAL:
                 return getattr(expense, FIELD_MAP[field]) == value

@@ -16,9 +16,11 @@ class Expense:
 
 
 class Comparator(Enum):
-    LESS_EQUAL = 1
-    GREATER_EQUAL = 2
-    EQUAL = 3
+    LESS_THAN = 1
+    LESS_THAN_EQUAL = 2
+    GREATER_THAN = 3
+    GREATER_THAN_EQUAL = 4
+    EQUAL = 5
 
 
 class ExpenseField(Enum):
