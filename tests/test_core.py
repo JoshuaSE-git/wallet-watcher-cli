@@ -224,6 +224,77 @@ def test_delete_expenses_comparison_amount_min(expense_list):
     assert new_data == correct_data
 
 
+def test_delete_expenses_comparison_date_max(expense_list):
+    strategy = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.GREATER_THAN,
+        dt.datetime.fromisoformat("2025-06-01"),
+    )
+    data = core.delete_expenses(expense_list, strategy)
+    correct_data: List[Expense] = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+def test_delete_expenses_comparison_date_min(expense_list):
+    strategy = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.LESS_THAN,
+        dt.datetime.fromisoformat("2025-06-03"),
+    )
+    data = core.delete_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+def test_delete_expenses_comparison_combo(expense_list):
+    strategy1 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.GREATER_THAN,
+        dt.datetime.fromisoformat("2025-06-01"),
+    )
+    strategy2 = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.GREATER_THAN, Decimal("20.00")
+    )
+    strategy = core.combine_filters(*[strategy1, strategy2])
+    data = core.delete_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
 @pytest.fixture
 def expense_list():
     data: List[Expense] = [

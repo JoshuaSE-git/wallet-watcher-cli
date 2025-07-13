@@ -67,6 +67,8 @@ def filter_by_comparison(
             case Comparator.LESS_THAN_EQUAL:
                 return getattr(expense, FIELD_MAP[field]) <= value
             case Comparator.GREATER_THAN:
+                if type(value) == Decimal:
+                    print(f"expens:{expense.amount} > value:{value}")
                 return getattr(expense, FIELD_MAP[field]) > value
             case Comparator.GREATER_THAN_EQUAL:
                 return getattr(expense, FIELD_MAP[field]) >= value
