@@ -28,10 +28,6 @@ def add_expense(
     return Expense(id, date, category, description, amount)
 
 
-def _get_next_id(data: List[Expense]) -> int:
-    return max((expense.id for expense in data), default=0) + 1
-
-
 def delete_expenses(
     data: List[Expense], filter_strategy: FilterStrategy
 ) -> List[Expense]:
@@ -58,7 +54,7 @@ def filter_by_matching(
 def filter_by_comparison(
     field: ExpenseField,
     comparator: Comparator,
-    value: Union[dt.date, Decimal, str, int],
+    value: Union[dt.date, Decimal],
 ) -> FilterStrategy:
     def strategy(expense: Expense) -> bool:
         match comparator:
@@ -74,6 +70,28 @@ def filter_by_comparison(
                 return getattr(expense, FIELD_MAP[field]) == value
 
     return strategy
+
+
+def filter_by_range(
+    field: ExpenseField,
+    start_val: Union[Union[dt.date, Decimal], None] = None,
+    end_val: Union[Union[dt.date, Decimal], None] = None,
+):
+    default_field_ranges = {
+        ExpenseField.AMOUNT: {"min": Decimal("-inf"), "max": Decimal("inf")},
+        ExpenseField.DATE: {"min": dt.date.min, "max": dt.date.max},
+    }
+
+    if start_val is None and end_val is None:
+        raise ValueError("Both range values cannot be empty")
+
+    if start_val is None:
+        start_val = default_field_ranges[field]["min"]
+
+    if end_val is None:
+        end_val = default_field_ranges[field]["max"]
+
+    pass
 
 
 def combine_filters_all(*filters: FilterStrategy) -> FilterStrategy:
@@ -129,3 +147,7 @@ def modify_expense(
             return data_copy
 
     raise ValueError(f"No expense found with ID {id}")
+
+
+def _get_next_id(data: List[Expense]) -> int:
+    return max((expense.id for expense in data), default=0) + 1
