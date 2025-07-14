@@ -40,7 +40,7 @@ def test_add_expense_defaults_2(expense_list_2):
     )
 
     assert new_expense == Expense(
-        9,
+        10,
         dt.datetime.fromisoformat("2025-06-13"),
         DEFAULT_CATEGORY,
         DEFAULT_DESCRIPTION,
@@ -150,18 +150,11 @@ def test_delete_expenses_matching_combo(expense_list):
         ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-01")
     )
     strategy2 = core.filter_by_matching(ExpenseField.CATEGORY, "Food")
-    combo_strategy = core.combine_filters(strategy, strategy2)
+    combo_strategy = core.combine_filters_any(strategy, strategy2)
 
     new_data: List[Expense] = core.delete_expenses(expense_list, combo_strategy)
 
     correct_data: List[Expense] = [
-        Expense(
-            2,
-            dt.datetime.fromisoformat("2025-06-01"),
-            "Gaming",
-            "League",
-            Decimal("50.00"),
-        ),
         Expense(
             3,
             dt.datetime.fromisoformat("2025-06-03"),
@@ -174,9 +167,29 @@ def test_delete_expenses_matching_combo(expense_list):
     assert new_data == correct_data
 
 
+# wallet delete --max-amount 20.50
 def test_delete_expenses_comparison_amount_max(expense_list):
     strategy = core.filter_by_comparison(
-        ExpenseField.AMOUNT, Comparator.GREATER_THAN, Decimal("20.50")
+        ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("20.50")
+    )
+    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    correct_data: List[Expense] = [
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+    ]
+
+    assert new_data == correct_data
+
+
+# wallet delete min-amount 20.50
+def test_delete_expenses_comparison_amount_min(expense_list):
+    strategy = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.GREATER_THAN_EQUAL, Decimal("20.50")
     )
     new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
     correct_data: List[Expense] = [
@@ -187,51 +200,41 @@ def test_delete_expenses_comparison_amount_max(expense_list):
             "Wendys",
             Decimal("10.23"),
         ),
-        Expense(
-            3,
-            dt.datetime.fromisoformat("2025-06-03"),
-            "School",
-            "Textbooks",
-            Decimal("20.50"),
-        ),
     ]
 
     assert new_data == correct_data
 
 
-def test_delete_expenses_comparison_amount_min(expense_list):
-    strategy = core.filter_by_comparison(
-        ExpenseField.AMOUNT, Comparator.LESS_THAN, Decimal("20.50")
-    )
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
-    correct_data: List[Expense] = [
-        Expense(
-            2,
-            dt.datetime.fromisoformat("2025-06-01"),
-            "Gaming",
-            "League",
-            Decimal("50.00"),
-        ),
-        Expense(
-            3,
-            dt.datetime.fromisoformat("2025-06-03"),
-            "School",
-            "Textbooks",
-            Decimal("20.50"),
-        ),
-    ]
-
-    assert new_data == correct_data
-
-
+# wallete delete --max-date 2025-06-02
 def test_delete_expenses_comparison_date_max(expense_list):
     strategy = core.filter_by_comparison(
         ExpenseField.DATE,
-        Comparator.GREATER_THAN,
-        dt.datetime.fromisoformat("2025-06-01"),
+        Comparator.LESS_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-06-02"),
     )
     data = core.delete_expenses(expense_list, strategy)
     correct_data: List[Expense] = [
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet delete --min-date 2025-06-02
+def test_delete_expenses_comparison_date_min(expense_list):
+    strategy = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.GREATER_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-06-02"),
+    )
+    data = core.delete_expenses(expense_list, strategy)
+    correct_data = [
         Expense(
             1,
             dt.datetime.fromisoformat("2025-06-01"),
@@ -251,12 +254,76 @@ def test_delete_expenses_comparison_date_max(expense_list):
     assert data == correct_data
 
 
-# wallet delete --min-date 2025-06-03
-def test_delete_expenses_comparison_date_min(expense_list):
-    strategy = core.filter_by_comparison(
+# wallet delete --min-date 2025-06-02 --min-amount 20.00
+def test_delete_expenses_comparison_combo(expense_list):
+    strategy1 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.GREATER_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-03"),
+        dt.datetime.fromisoformat("2025-06-02"),
+    )
+    strategy2 = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.GREATER_THAN_EQUAL, Decimal("20.00")
+    )
+    strategy = core.combine_filters_any(*[strategy1, strategy2])
+    data = core.delete_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --id 1 2
+def test_list_expenses_matching_id(expense_list):
+    strategy = core.filter_by_matching(ExpenseField.ID, *[1, 2])
+    data = core.filter_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --category "Food"
+def test_list_expenses_matching_category(expense_list):
+    strategy = core.filter_by_matching(ExpenseField.CATEGORY, "Food")
+    data = core.filter_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --date 2025-06-03
+def test_list_expenses_matching_date(expense_list):
+    strategy = core.filter_by_matching(
+        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-03")
     )
     data = core.filter_expenses(expense_list, strategy)
     correct_data = [
@@ -272,17 +339,40 @@ def test_delete_expenses_comparison_date_min(expense_list):
     assert data == correct_data
 
 
-def _delete_expenses_comparison_combo(expense_list):
-    strategy1 = core.filter_by_comparison(
-        ExpenseField.DATE,
-        Comparator.GREATER_THAN,
-        dt.datetime.fromisoformat("2025-06-01"),
+# wallet list --amount 20.5 50
+def test_list_expenses_matching_amount(expense_list):
+    strategy = core.filter_by_matching(
+        ExpenseField.AMOUNT, Decimal("20.5"), Decimal("50")
     )
+    data = core.filter_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --category "Food" "Gaming" --max-amount 20
+def test_list_expenses_matching_combo(expense_list):
+    strategy1 = core.filter_by_matching(ExpenseField.CATEGORY, *["Food", "Gaming"])
     strategy2 = core.filter_by_comparison(
-        ExpenseField.AMOUNT, Comparator.GREATER_THAN, Decimal("20.00")
+        ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("20")
     )
-    strategy = core.combine_filters(*[strategy1, strategy2])
-    data = core.delete_expenses(expense_list, strategy)
+    strategy = core.combine_filters_all(*[strategy1, strategy2])
+    data = core.filter_expenses(expense_list, strategy)
     correct_data = [
         Expense(
             1,
@@ -290,6 +380,136 @@ def _delete_expenses_comparison_combo(expense_list):
             "Food",
             "Wendys",
             Decimal("10.23"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --min-amount 20 --max-amount 20.5
+def test_list_expenses_comparison_amount(expense_list):
+    strategy1 = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.GREATER_THAN_EQUAL, Decimal("20")
+    )
+    strategy2 = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("20.5")
+    )
+    strategy = core.combine_filters_all(*[strategy1, strategy2])
+    data = core.filter_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --min-date 2025-01-01 --max-date 2025-06-01
+def test_list_expenses_comparison_date(expense_list):
+    strategy1 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.GREATER_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-01-01"),
+    )
+    strategy2 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.LESS_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-06-01"),
+    )
+    strategy = core.combine_filters_all(*[strategy1, strategy2])
+    data = core.filter_expenses(expense_list, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("10.23"),
+        ),
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet list --min-date 2025-01-01 --max-date 2025-06-01 --category "Food"
+# "Gaming" --max-amount 6
+def test_list_expenses_combo(expense_list_2):
+    strategy1 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.GREATER_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-01-01"),
+    )
+    strategy2 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.LESS_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-06-01"),
+    )
+    strategy3 = core.filter_by_matching(ExpenseField.CATEGORY, *["Food", "Gaming"])
+    strategy4 = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("6")
+    )
+    strategy = core.combine_filters_all(*[strategy1, strategy2, strategy3, strategy4])
+    data = core.filter_expenses(expense_list_2, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-04-01"),
+            "Food",
+            "Arbys",
+            Decimal("5.23"),
+        ),
+        Expense(
+            9,
+            dt.datetime.fromisoformat("2025-05-09"),
+            "Gaming",
+            "N/A",
+            Decimal("3"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet delete --min-date 2025-06-01 --max-date 2025-07-01 --category "General"
+# "Gaming" --max-amount 1
+def test_delete_expenses_combo(expense_list_2):
+    strategy1 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.GREATER_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-06-01"),
+    )
+    strategy2 = core.filter_by_comparison(
+        ExpenseField.DATE,
+        Comparator.LESS_THAN_EQUAL,
+        dt.datetime.fromisoformat("2025-07-01"),
+    )
+
+    strategy1_2 = core.combine_filters_all(strategy1, strategy2)
+    strategy3 = core.filter_by_matching(ExpenseField.CATEGORY, *["General", "Gaming"])
+    strategy4 = core.filter_by_comparison(
+        ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("1")
+    )
+    strategy = core.combine_filters_any(*[strategy1_2, strategy3, strategy4])
+    data = core.delete_expenses(expense_list_2, strategy)
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-04-01"),
+            "Food",
+            "Arbys",
+            Decimal("5.23"),
         ),
     ]
 
@@ -330,6 +550,27 @@ def expense_list_2():
     data: List[Expense] = [
         Expense(
             1,
+            dt.datetime.fromisoformat("2025-04-01"),
+            "Food",
+            "Arbys",
+            Decimal("5.23"),
+        ),
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-05-09"),
+            "General",
+            "N/A",
+            Decimal("1"),
+        ),
+        Expense(
+            9,
+            dt.datetime.fromisoformat("2025-05-09"),
+            "Gaming",
+            "N/A",
+            Decimal("3"),
+        ),
+        Expense(
+            3,
             dt.datetime.fromisoformat("2025-06-01"),
             "Food",
             "Wendys",
@@ -343,11 +584,11 @@ def expense_list_2():
             Decimal("50.00"),
         ),
         Expense(
-            3,
+            4,
             dt.datetime.fromisoformat("2025-06-03"),
             "School",
             "Textbooks",
-            Decimal("20.50"),
+            Decimal("2"),
         ),
     ]
 
