@@ -67,7 +67,7 @@ def filter_by_comparison(
             case Comparator.LESS_THAN_EQUAL:
                 return getattr(expense, FIELD_MAP[field]) <= value
             case Comparator.GREATER_THAN:
-                if type(value) == Decimal:
+                if type(value) is Decimal:
                     print(f"expens:{expense.amount} > value:{value}")
                 return getattr(expense, FIELD_MAP[field]) > value
             case Comparator.GREATER_THAN_EQUAL:
@@ -81,9 +81,24 @@ def filter_by_comparison(
 def combine_filters(*filters: FilterStrategy) -> FilterStrategy:
     def strategy(expense: Expense) -> bool:
         for filter_strategy in filters:
+            print(f"Testing: {filter_strategy} on: {expense}")
+            print(f"Result: {filter_strategy(expense)}")
             if not filter_strategy(expense):
                 return False
         return True
+
+    return strategy
+
+
+def combine_filters_2(*filters: FilterStrategy) -> FilterStrategy:
+    def strategy(expense: Expense) -> bool:
+        tests = []
+        for filter_strategy in filters:
+            if not filter_strategy(expense):
+                tests.append(False)
+            else:
+                tests.append(True)
+        return all(tests)
 
     return strategy
 

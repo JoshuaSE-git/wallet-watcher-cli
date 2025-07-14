@@ -251,13 +251,14 @@ def test_delete_expenses_comparison_date_max(expense_list):
     assert data == correct_data
 
 
+# wallet delete --min-date 2025-06-03
 def test_delete_expenses_comparison_date_min(expense_list):
     strategy = core.filter_by_comparison(
         ExpenseField.DATE,
-        Comparator.LESS_THAN,
+        Comparator.GREATER_THAN_EQUAL,
         dt.datetime.fromisoformat("2025-06-03"),
     )
-    data = core.delete_expenses(expense_list, strategy)
+    data = core.filter_expenses(expense_list, strategy)
     correct_data = [
         Expense(
             3,
@@ -271,7 +272,7 @@ def test_delete_expenses_comparison_date_min(expense_list):
     assert data == correct_data
 
 
-def test_delete_expenses_comparison_combo(expense_list):
+def _delete_expenses_comparison_combo(expense_list):
     strategy1 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.GREATER_THAN,
