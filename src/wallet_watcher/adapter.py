@@ -16,7 +16,7 @@ def convert_csv_row_to_expense(row: Dict[str, str]) -> Expense:
     )
 
 
-def conert_expense_to_csv_row(expense: Expense) -> Dict[str, str]:
+def convert_expense_to_csv_row(expense: Expense) -> Dict[str, str]:
     return {
         "id": str(expense.id),
         "date": expense.date.strftime(DATE_FORMAT_STRING),
