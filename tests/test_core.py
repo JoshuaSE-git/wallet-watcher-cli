@@ -516,6 +516,73 @@ def test_delete_expenses_combo(expense_list_2):
     assert data == correct_data
 
 
+# wallet edit --id 1 --amount 100
+def test_modify_expenses_amount(expense_list):
+    data = core.modify_expense(expense_list, 1, new_amount=Decimal("100"))
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Food",
+            "Wendys",
+            Decimal("100"),
+        ),
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
+# wallet edit --id 2 --amount 100 --date 2025-06-02 --
+def test_modify_expenses_all(expense_list):
+    data = core.modify_expense(
+        expense_list,
+        1,
+        new_amount=Decimal("100"),
+        new_date=dt.datetime.fromisoformat("2025-06-02"),
+        new_category="Gaming",
+        new_description="N/A",
+    )
+    correct_data = [
+        Expense(
+            1,
+            dt.datetime.fromisoformat("2025-06-02"),
+            "Gaming",
+            "N/A",
+            Decimal("100"),
+        ),
+        Expense(
+            2,
+            dt.datetime.fromisoformat("2025-06-01"),
+            "Gaming",
+            "League",
+            Decimal("50.00"),
+        ),
+        Expense(
+            3,
+            dt.datetime.fromisoformat("2025-06-03"),
+            "School",
+            "Textbooks",
+            Decimal("20.50"),
+        ),
+    ]
+
+    assert data == correct_data
+
+
 @pytest.fixture
 def expense_list():
     data: List[Expense] = [
