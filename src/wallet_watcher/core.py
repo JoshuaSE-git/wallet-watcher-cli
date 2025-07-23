@@ -2,7 +2,7 @@ import copy
 import datetime as dt
 
 from typing import List, Set, Union
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from wallet_watcher._types import Expense, FilterStrategy, Comparator, ExpenseField
 from wallet_watcher.constants import DEFAULT_CATEGORY, DEFAULT_DESCRIPTION, FIELD_MAP
 
@@ -14,6 +14,7 @@ def add_expense(
     date: dt.date | None = None,
     category: str | None = None,
 ) -> Expense:
+    amount = amount.quantize(Decimal(".01"), rounding=ROUND_HALF_EVEN)
     if amount < Decimal("0.01"):
         raise ValueError("Amount must be greater than 0.01")
 
@@ -54,7 +55,7 @@ def filter_by_matching(
 def filter_by_comparison(
     field: ExpenseField,
     comparator: Comparator,
-    value: Union[dt.date, Decimal],
+    value: Union[dt.date, Decimal, None],
 ) -> FilterStrategy:
     def strategy(expense: Expense) -> bool:
         match comparator:
@@ -81,17 +82,16 @@ def filter_by_range(
         ExpenseField.AMOUNT: {"min": Decimal("-inf"), "max": Decimal("inf")},
         ExpenseField.DATE: {"min": dt.date.min, "max": dt.date.max},
     }
-
-    if start_val is None and end_val is None:
-        raise ValueError("Both range values cannot be empty")
-
+    # TODO ADD BLANK STRATEGY FOR BOTH EMPTIES
     if start_val is None:
         start_val = default_field_ranges[field]["min"]
 
     if end_val is None:
         end_val = default_field_ranges[field]["max"]
 
-    pass
+    min = filter_by_comparison(field, Comparator.GREATER_THAN_EQUAL, start_val)
+    max = filter_by_comparison(field, Comparator.LESS_THAN_EQUAL, end_val)
+    return combine_filters_all(min, max)
 
 
 def combine_filters_all(*filters: FilterStrategy) -> FilterStrategy:
