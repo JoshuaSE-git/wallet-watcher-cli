@@ -37,9 +37,25 @@ def initialize_parsers():
     delete_parser.add_argument(
         "-i", "--id", nargs="+", action="extend", type=parse_id, default=None
     )
-    delete_parser.add_argument("-d", "--date", type=parse_date, default=None)
-    delete_parser.add_argument("-c", "--category", type=parse_category, default=None)
-    delete_parser.add_argument("-s", "--description", type=parse_category, default=None)
+    delete_parser.add_argument(
+        "-d", "--date", nargs="+", action="extend", type=parse_date, default=None
+    )
+    delete_parser.add_argument(
+        "-c",
+        "--category",
+        nargs="+",
+        action="extend",
+        type=parse_category,
+        default=None,
+    )
+    delete_parser.add_argument(
+        "-s",
+        "--description",
+        nargs="+",
+        action="extend",
+        type=parse_description,
+        default=None,
+    )
     delete_parser.add_argument("--min-date", type=parse_date, default=None)
     delete_parser.add_argument("--max-date", type=parse_date, default=None)
     delete_parser.add_argument("--min-amount", type=parse_amount, default=None)
@@ -60,9 +76,26 @@ def initialize_parsers():
     list_parser.add_argument(
         "-i", "--id", nargs="+", action="extend", type=parse_id, default=None
     )
-    list_parser.add_argument("-d", "--date", type=parse_date, default=None)
-    list_parser.add_argument("-c", "--category", type=parse_category, default=None)
-    list_parser.add_argument("-s", "--description", type=parse_category, default=None)
+    list_parser.add_argument(
+        "-d", "--date", nargs="+", action="extend", type=parse_date, default=None
+    )
+    list_parser.add_argument(
+        "-c",
+        "--category",
+        nargs="+",
+        action="extend",
+        type=parse_category,
+        default=None,
+    )
+    list_parser.add_argument(
+        "-s",
+        "--description",
+        nargs="+",
+        action="extend",
+        type=parse_description,
+        default=None,
+    )
+
     list_parser.add_argument("--min-date", type=parse_date, default=None)
     list_parser.add_argument("--max-date", type=parse_date, default=None)
     list_parser.add_argument("--min-amount", type=parse_amount, default=None)
@@ -73,7 +106,7 @@ def initialize_parsers():
 
 def handle_add(args):
     print("in handle_add")
-    path = get_os_data_path() + "/wallet-watcher/finances.csv"
+    path = get_user_data()
     data = adapter.convert_csv_to_expenses(load_csv(path))
     new_expense: Expense = core.add_expense(
         data, args.amount, args.description, args.date, args.category
@@ -117,11 +150,13 @@ def handle_delete(args):
         if value is not None:
             strategies.append(core.filter_by_matching(match_filter, *value))
     for range_filter, value in filters["range"].items():
+        if value["min"] is None and value["max"] is None:
+            continue
         strategies.append(
             core.filter_by_range(range_filter, value["min"], value["max"])
         )
     final_strategy = core.combine_filters_any(*strategies)
-    path = get_os_data_path() + "/wallet-watcher/finances.csv"
+    path = get_user_data()
 
     data = adapter.convert_csv_to_expenses(load_csv(path))
     after_data: List[Expense] = core.delete_expenses(data, final_strategy)
@@ -132,6 +167,19 @@ def handle_delete(args):
 
 
 def handle_edit(args):
+    path = get_user_data()
+    data = adapter.convert_csv_to_expenses(load_csv(path))
+    after_data: List[Expense] = core.modify_expense(
+        data,
+        id=args.id,
+        new_amount=args.amount if args.amount else None,
+        new_date=args.date if args.date else None,
+        new_category=args.category if args.category else None,
+        new_description=args.description if args.description else None,
+    )
+    csv = adapter.convert_expenses_to_csv(after_data)
+    save_csv(path, csv)
+
     return
 
 
@@ -152,7 +200,7 @@ def parse_amount(amount: str) -> Decimal:
 def parse_date(date: str) -> dt.date:
     parsed_date = dt.datetime.now()
     try:
-        parsed_date = dt.datetime.strptime(date, const.DATE_FORMAT_STRING)
+        parsed_date = dt.datetime.strptime(date, const.DATE_FORMAT_STRING).date()
     except Exception:
         raise argparse.ArgumentTypeError(
             f"'{date}' is not a valid date (Use YYYY-MM-DD)."
@@ -187,6 +235,10 @@ def parse_description(description: str) -> str:
         )
 
     return description
+
+
+def get_user_data() -> str:
+    return os.path.join(get_os_data_path(), "wallet-watcher/finances.csv")
 
 
 def get_os_data_path() -> str:

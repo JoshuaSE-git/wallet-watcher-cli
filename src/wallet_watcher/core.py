@@ -82,7 +82,7 @@ def filter_by_range(
         ExpenseField.AMOUNT: {"min": Decimal("-inf"), "max": Decimal("inf")},
         ExpenseField.DATE: {"min": dt.date.min, "max": dt.date.max},
     }
-    # TODO ADD BLANK STRATEGY FOR BOTH EMPTIES
+
     if start_val is None:
         start_val = default_field_ranges[field]["min"]
 
