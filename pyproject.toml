@@ -10,7 +10,7 @@ authors = [{ name = "Joshua Emralino", email = "jemralino@student.sdccd.edu" }]
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-dependencies = []
+dependencies = ["rich"]
 
 [project.scripts]
 mycli = "wallet_watcher.cli:main"

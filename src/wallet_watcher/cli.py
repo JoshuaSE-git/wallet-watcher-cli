@@ -5,7 +5,9 @@ import argparse
 import wallet_watcher.constants as const
 import wallet_watcher.core as core
 import wallet_watcher.adapter as adapter
+import wallet_watcher.render as render
 import datetime as dt
+from rich.console import Console
 from wallet_watcher._types import Expense, ExpenseField
 from typing import List, Dict
 from decimal import Decimal
@@ -105,7 +107,6 @@ def initialize_parsers():
 
 
 def handle_add(args):
-    print("in handle_add")
     path = get_user_data()
     data = adapter.convert_csv_to_expenses(load_csv(path))
     new_expense: Expense = core.add_expense(
@@ -120,7 +121,6 @@ def handle_add(args):
 
 def group_filters(args):
     arg_dict = vars(args)
-    print(arg_dict)
     filters = {
         "matching": {
             ExpenseField.ID: args.id,
@@ -184,7 +184,25 @@ def handle_edit(args):
 
 
 def handle_list(args):
-    return
+    filters = group_filters(args)
+    strategies = []
+    for match_filter, value in filters["matching"].items():
+        if value is not None:
+            strategies.append(core.filter_by_matching(match_filter, *value))
+    for range_filter, value in filters["range"].items():
+        if value["min"] is None and value["max"] is None:
+            continue
+        strategies.append(
+            core.filter_by_range(range_filter, value["min"], value["max"])
+        )
+    final_strategy = core.combine_filters_all(*strategies)
+    path = get_user_data()
+
+    data = adapter.convert_csv_to_expenses(load_csv(path))
+    after_data: List[Expense] = core.filter_expenses(data, final_strategy)
+
+    console = Console()
+    console.print(render.render_table(after_data))
 
 
 def parse_amount(amount: str) -> Decimal:
@@ -249,7 +267,7 @@ def get_os_data_path() -> str:
         )
     elif user_os == const.MACOS:
         return os.path.expanduser(const.MACOS_APPDATA_PATH)
-    elif user_os == const.WINDOWS:
+    elif user_os.startswith("win"):
         return os.environ.get(
             const.ENV_LOCAL_APPDATA, os.path.expanduser(const.WINDOWS_APPDATA_PATH)
         )
@@ -259,8 +277,7 @@ def get_os_data_path() -> str:
 
 def initialize_user_data() -> None:
     app_data_dir_path: str = os.path.join(get_os_data_path(), const.APP_DIRECTORY_NAME)
-    if not os.path.exists(app_data_dir_path):
-        os.mkdir(app_data_dir_path, mode=0o600)
+    os.makedirs(app_data_dir_path, mode=0o700, exist_ok=True)
 
     user_data_path: str = os.path.join(app_data_dir_path, const.USER_DATA_FILENAME)
     if not os.path.exists(user_data_path):
