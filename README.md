@@ -64,4 +64,4 @@ wallet list --year 2027 --sort-by amount --desc
 
 ## 📄 License
 
-MIT License © Joshua Emralino
+[MIT License](https://github.com/JoshuaSE-git/wallet-watcher-cli/blob/main/LICENSE) © Joshua Emralino
