@@ -8,8 +8,9 @@ def render_table(
     data: List[Expense],
     sort_key: ExpenseField = ExpenseField.DATE,
     reverse: bool = False,
+    title: str = "",
 ):
-    table = Table()
+    table = Table(title=title)
     for col in FIELD_NAMES:
         table.add_column(col.upper())
 

@@ -59,7 +59,7 @@ def test_add_expense_invalid_amount():
 def test_delete_expenses_matching_id(expense_list):
     strategy = core.filter_by_matching(ExpenseField.ID, 2)
 
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
 
     correct_data: List[Expense] = [
         Expense(
@@ -84,7 +84,7 @@ def test_delete_expenses_matching_id(expense_list):
 def test_delete_expenses_matching_id_2(expense_list):
     strategy = core.filter_by_matching(ExpenseField.ID, *[2, 1])
 
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
 
     correct_data: List[Expense] = [
         Expense(
@@ -102,7 +102,7 @@ def test_delete_expenses_matching_id_2(expense_list):
 def test_delete_expenses_matching_category(expense_list):
     strategy = core.filter_by_matching(ExpenseField.CATEGORY, *["Food", "Gaming"])
 
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
 
     correct_data: List[Expense] = [
         Expense(
@@ -122,7 +122,7 @@ def test_delete_expenses_matching_date(expense_list):
         ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-01")
     )
 
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
 
     correct_data: List[Expense] = [
         Expense(
@@ -140,7 +140,7 @@ def test_delete_expenses_matching_date(expense_list):
 def test_delete_expenses_no_match(expense_list):
     strategy = core.filter_by_matching(ExpenseField.ID, 999)
 
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
 
     assert new_data == expense_list
 
@@ -152,7 +152,7 @@ def test_delete_expenses_matching_combo(expense_list):
     strategy2 = core.filter_by_matching(ExpenseField.CATEGORY, "Food")
     combo_strategy = core.combine_filters_any(strategy, strategy2)
 
-    new_data: List[Expense] = core.delete_expenses(expense_list, combo_strategy)
+    new_data, _ = core.delete_expenses(expense_list, combo_strategy)
 
     correct_data: List[Expense] = [
         Expense(
@@ -172,7 +172,7 @@ def test_delete_expenses_comparison_amount_max(expense_list):
     strategy = core.filter_by_comparison(
         ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("20.50")
     )
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
     correct_data: List[Expense] = [
         Expense(
             2,
@@ -191,7 +191,7 @@ def test_delete_expenses_comparison_amount_min(expense_list):
     strategy = core.filter_by_comparison(
         ExpenseField.AMOUNT, Comparator.GREATER_THAN_EQUAL, Decimal("20.50")
     )
-    new_data: List[Expense] = core.delete_expenses(expense_list, strategy)
+    new_data, _ = core.delete_expenses(expense_list, strategy)
     correct_data: List[Expense] = [
         Expense(
             1,

@@ -1,7 +1,7 @@
 import copy
 import datetime as dt
 
-from typing import List, Set, Union
+from typing import List, Set, Union, Tuple
 from decimal import ROUND_HALF_EVEN, Decimal
 from wallet_watcher._types import Expense, FilterStrategy, Comparator, ExpenseField
 from wallet_watcher.constants import DEFAULT_CATEGORY, DEFAULT_DESCRIPTION, FIELD_MAP
@@ -31,8 +31,17 @@ def add_expense(
 
 def delete_expenses(
     data: List[Expense], filter_strategy: FilterStrategy
-) -> List[Expense]:
-    return [expense for expense in data if not filter_strategy(expense)]
+) -> Tuple[List[Expense], List[Expense]]:
+    new_data = []
+    deleted_data = []
+
+    for expense in data:
+        if not filter_strategy(expense):
+            new_data.append(expense)
+        else:
+            deleted_data.append(expense)
+
+    return new_data, deleted_data
 
 
 def filter_expenses(
@@ -129,11 +138,12 @@ def modify_expense(
     new_category: str | None = None,
     new_description: str | None = None,
     new_amount: Decimal | None = None,
-) -> List[Expense]:
+) -> Tuple[List[Expense], Expense, Expense]:
     data_copy = [copy.copy(expense) for expense in data]
 
     for expense in data_copy:
         if expense.id == id:
+            before = expense
             if new_date is not None:
                 expense.date = new_date
             if new_category is not None:
@@ -144,9 +154,18 @@ def modify_expense(
                 if new_amount < Decimal("0.01"):
                     raise ValueError("Amount must be greater than 0.01")
                 expense.amount = new_amount
-            return data_copy
+            after = expense
+            return data_copy, before, after
 
     raise ValueError(f"No expense found with ID {id}")
+
+
+def calculate_total(data: List[Expense]) -> float:
+    total = 0
+    for expense in data:
+        total += expense.amount
+
+    return float(total)
 
 
 def _get_next_id(data: List[Expense]) -> int:

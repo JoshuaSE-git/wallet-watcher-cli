@@ -119,13 +119,15 @@ def handle_add(args, console):
     new_csv_row: Dict[str, str] = adapter.convert_expense_to_csv_row(new_expense)
 
     append_csv(path, new_csv_row)
-    console.print("Succesfully added expense")
 
-    return
+    total = core.calculate_total(
+        adapter.convert_csv_to_expenses(load_csv(get_user_data()))
+    )
+    console.print(f"Total: {total:.2f}")
+    console.print(render.render_table([new_expense], title="New Expense Added"))
 
 
 def group_filters(args):
-    arg_dict = vars(args)
     filters = {
         "matching": {
             ExpenseField.ID: args.id,
@@ -135,12 +137,12 @@ def group_filters(args):
         },
         "range": {
             ExpenseField.DATE: {
-                "min": arg_dict["min_date"],
-                "max": arg_dict["max_date"],
+                "min": args.min_date,
+                "max": args.max_date,
             },
             ExpenseField.AMOUNT: {
-                "min": arg_dict["min_amount"],
-                "max": arg_dict["max_amount"],
+                "min": args.min_amount,
+                "max": args.max_amount,
             },
         },
     }
@@ -164,11 +166,12 @@ def handle_delete(args, console):
     path = get_user_data()
 
     data = adapter.convert_csv_to_expenses(load_csv(path))
-    after_data: List[Expense] = core.delete_expenses(data, final_strategy)
+    after_data, deleted_data = core.delete_expenses(data, final_strategy)
     csv = adapter.convert_expenses_to_csv(after_data)
     save_csv(path, csv)
 
-    console.print("Succesfully deleted expenses")
+    console.print(render.render_table(deleted_data, title="Deleted Expenses"))
+    console.print(render.render_table(after_data, title="Remaining Expenses"))
 
     return
 
@@ -176,7 +179,7 @@ def handle_delete(args, console):
 def handle_edit(args, console):
     path = get_user_data()
     data = adapter.convert_csv_to_expenses(load_csv(path))
-    after_data: List[Expense] = core.modify_expense(
+    after_data, before, after = core.modify_expense(
         data,
         id=args.id,
         new_amount=args.amount if args.amount else None,
@@ -187,7 +190,11 @@ def handle_edit(args, console):
     csv = adapter.convert_expenses_to_csv(after_data)
     save_csv(path, csv)
 
-    console.print("Succesufully edited expense")
+    before_table = render.render_table([before], title="Before")
+    after_table = render.render_table([after], title="After")
+
+    console.print(before_table)
+    console.print(after_table)
 
     return
 
@@ -216,6 +223,8 @@ def handle_list(args, console):
         "amount": ExpenseField.AMOUNT,
     }
 
+    total = core.calculate_total(after_data)
+    console.print(f"Filtered Total: ${total:.2f}")
     console.print(
         render.render_table(
             after_data,

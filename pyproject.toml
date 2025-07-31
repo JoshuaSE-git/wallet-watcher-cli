@@ -13,7 +13,7 @@ license = { text = "MIT" }
 dependencies = ["rich"]
 
 [project.scripts]
-mycli = "wallet_watcher.cli:main"
+wallet = "wallet_watcher.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest"]
