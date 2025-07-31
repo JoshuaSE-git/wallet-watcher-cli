@@ -17,8 +17,9 @@ def main() -> None:
     initialize_user_data()
     parser = initialize_parsers()
     args = parser.parse_args()
+    console = Console()
     if hasattr(args, "func"):
-        args.func(args)
+        args.func(args, console)
 
     return
 
@@ -103,10 +104,13 @@ def initialize_parsers():
     list_parser.add_argument("--min-amount", type=parse_amount, default=None)
     list_parser.add_argument("--max-amount", type=parse_amount, default=None)
 
+    list_parser.add_argument("--sort-key", choices=["date", "id", "amount"])
+    list_parser.add_argument("--sort-reverse", action="store_true")
+
     return parser
 
 
-def handle_add(args):
+def handle_add(args, console):
     path = get_user_data()
     data = adapter.convert_csv_to_expenses(load_csv(path))
     new_expense: Expense = core.add_expense(
@@ -115,6 +119,7 @@ def handle_add(args):
     new_csv_row: Dict[str, str] = adapter.convert_expense_to_csv_row(new_expense)
 
     append_csv(path, new_csv_row)
+    console.print("Succesfully added expense")
 
     return
 
@@ -143,7 +148,7 @@ def group_filters(args):
     return filters
 
 
-def handle_delete(args):
+def handle_delete(args, console):
     filters = group_filters(args)
     strategies = []
     for match_filter, value in filters["matching"].items():
@@ -163,10 +168,12 @@ def handle_delete(args):
     csv = adapter.convert_expenses_to_csv(after_data)
     save_csv(path, csv)
 
+    console.print("Succesfully deleted expenses")
+
     return
 
 
-def handle_edit(args):
+def handle_edit(args, console):
     path = get_user_data()
     data = adapter.convert_csv_to_expenses(load_csv(path))
     after_data: List[Expense] = core.modify_expense(
@@ -180,10 +187,12 @@ def handle_edit(args):
     csv = adapter.convert_expenses_to_csv(after_data)
     save_csv(path, csv)
 
+    console.print("Succesufully edited expense")
+
     return
 
 
-def handle_list(args):
+def handle_list(args, console):
     filters = group_filters(args)
     strategies = []
     for match_filter, value in filters["matching"].items():
@@ -201,8 +210,21 @@ def handle_list(args):
     data = adapter.convert_csv_to_expenses(load_csv(path))
     after_data: List[Expense] = core.filter_expenses(data, final_strategy)
 
-    console = Console()
-    console.print(render.render_table(after_data))
+    sort_map = {
+        "id": ExpenseField.ID,
+        "date": ExpenseField.DATE,
+        "amount": ExpenseField.AMOUNT,
+    }
+
+    console.print(
+        render.render_table(
+            after_data,
+            sort_key=ExpenseField.DATE
+            if not args.sort_key
+            else sort_map[args.sort_key],
+            reverse=args.sort_reverse,
+        )
+    )
 
 
 def parse_amount(amount: str) -> Decimal:
