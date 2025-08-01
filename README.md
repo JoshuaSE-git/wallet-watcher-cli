@@ -20,6 +20,7 @@
 | `--date, -d`                 | `add`, `delete`, `edit`, `list` | Date in YYYY-MM-DD format         |
 | `--category, -c`             | `add`, `delete`, `edit`, `list` | Expense category (ex. "Gaming")   |
 | `--description, -s`          | `add`, `delete`, `edit`, `list` | Expense description (ex. "Dota2") |
+| `--id, -i`                   | `delete`, `edit`, `list`        | Expense id (ex. 1)                |
 | `--amount, -a`               | `delete`, `edit`, `list`        | Expense amount (ex. 10.32)        |
 | `--min-amount, --max-amount` | `delete`, `list`                | Min/Max amount                    |
 | `--min-date, --max-date`     | `delete`, `list`                | Min/Max date                      |
@@ -32,9 +33,9 @@ Use wallet [command] --help to see full options and flag descriptions.
 
 ```bash
 wallet add 10.24
-wallet add 10.24 --date "2027-07-08" --category "Food" --desc "Wendys"
-wallet add 10.24 --category "Food" --desc "Wendys"
-wallet add 10.24 -c "Food" -d "Wendys"
+wallet add 10.24 --date "2027-07-08" --category "Food" --description "Wendys"
+wallet add 10.24 --category "Food" -s "Wendys"
+wallet add 10.24 -c "Food" -s "Wendys"
 ```
 
 ### ❌ Deleting Expenses
@@ -52,8 +53,8 @@ wallet delete --min-amount 10.23 --max-amount 23.23
 
 ```bash
 wallet edit --id 1 -c "Gaming" --date 2027-05-05 --description "League"
-wallet edit --id 13 --amount 24.67
-wallet edit --id 12 --description "Starbucks"
+wallet edit -i 13 --amount 24.67
+wallet edit --id 12 --s "Starbucks"
 ```
 
 ### 📋 Listing Expenses
