@@ -15,6 +15,15 @@
 | `list`   | View filtered and sorted expenses                     |
 | `undo`   | Undo recent changes (deletions, edits, adds)          |
 
+| Flags                        | Available Commands              | Description                       |
+| ---------------------------- | ------------------------------- | --------------------------------- |
+| `--date, -d`                 | `add`, `delete`, `edit`, `list` | Date in YYYY-MM-DD format         |
+| `--category, -c`             | `add`, `delete`, `edit`, `list` | Expense category (ex. "Gaming")   |
+| `--description, -s`          | `add`, `delete`, `edit`, `list` | Expense description (ex. "Dota2") |
+| `--amount, -a`               | `delete`, `edit`, `list`        | Expense amount (ex. 10.32)        |
+| `--min-amount, --max-amount` | `delete`, `list`                | Min/Max amount                    |
+| `--min-date, --max-date`     | `delete`, `list`                | Min/Max date                      |
+
 Use wallet [command] --help to see full options and flag descriptions.
 
 ## ▶️ Usage Examples
@@ -42,9 +51,9 @@ wallet delete --min-amount 10.23 --max-amount 23.23
 ### ✏️ Editing Expenses
 
 ```bash
-wallet edit --id 1 --c "Gaming" --date 2027-05-05 --desc "League"
+wallet edit --id 1 -c "Gaming" --date 2027-05-05 --description "League"
 wallet edit --id 13 --amount 24.67
-wallet edit --id 12 --desc "Starbucks"
+wallet edit --id 12 --description "Starbucks"
 ```
 
 ### 📋 Listing Expenses
