@@ -104,8 +104,10 @@ def initialize_parsers():
     list_parser.add_argument("--min-amount", type=parse_amount, default=None)
     list_parser.add_argument("--max-amount", type=parse_amount, default=None)
 
-    list_parser.add_argument("--sort-key", choices=["date", "id", "amount"])
-    list_parser.add_argument("--sort-reverse", action="store_true")
+    list_parser.add_argument(
+        "--sort-by", choices=["date", "id", "amount"], default="date"
+    )
+    list_parser.add_argument("--desc", action="store_true")
 
     return parser
 
@@ -120,11 +122,16 @@ def handle_add(args, console):
 
     append_csv(path, new_csv_row)
 
-    total = core.calculate_total(
-        adapter.convert_csv_to_expenses(load_csv(get_user_data()))
+    console.print()
+    console.print("[bold green]✅ Expense Added![/]")
+    console.print(f"[bold white]ID:[/]          {new_expense.id}")
+    console.print(f"[bold white]Date:[/]        {new_expense.date}")
+    console.print(f"[bold white]Category:[/]    [cyan]{new_expense.category}[/]")
+    console.print(f"[bold white]Description:[/] {new_expense.description}")
+    console.print(
+        f"[bold white]Amount:[/]      [bold green]${new_expense.amount:.2f}[/]"
     )
-    console.print(f"Total: {total:.2f}")
-    console.print(render.render_table([new_expense], title="New Expense Added"))
+    console.print()
 
 
 def group_filters(args):
@@ -217,23 +224,23 @@ def handle_list(args, console):
     data = adapter.convert_csv_to_expenses(load_csv(path))
     after_data: List[Expense] = core.filter_expenses(data, final_strategy)
 
-    sort_map = {
-        "id": ExpenseField.ID,
-        "date": ExpenseField.DATE,
-        "amount": ExpenseField.AMOUNT,
+    key_map = {
+        "date": lambda x: x.date,
+        "amount": lambda x: x.amount,
+        "id": lambda x: x.id,
     }
 
-    total = core.calculate_total(after_data)
-    console.print(f"Filtered Total: ${total:.2f}")
+    sorted_data = sorted(after_data, key=key_map[args.sort_by], reverse=args.desc)
+    console.print(render.render_table(sorted_data))
+
+    total = core.calculate_total(sorted_data)
+    entry_count = len(sorted_data)
+    total_entries = len(data)
+    console.print(f"[bold white]Filtered Total:[/] [bold green]${total:.2f}[/]")
     console.print(
-        render.render_table(
-            after_data,
-            sort_key=ExpenseField.DATE
-            if not args.sort_key
-            else sort_map[args.sort_key],
-            reverse=args.sort_reverse,
-        )
+        f"[bold white]Entries:[/] [bold yellow]{entry_count}/{total_entries}[/]"
     )
+    console.print()
 
 
 def parse_amount(amount: str) -> Decimal:

@@ -1,28 +1,22 @@
+from rich import box
 from rich.table import Table
 from wallet_watcher._types import Expense, ExpenseField
 from typing import List
-from wallet_watcher.constants import FIELD_NAMES
 
 
 def render_table(
     data: List[Expense],
-    sort_key: ExpenseField = ExpenseField.DATE,
-    reverse: bool = False,
     title: str = "",
 ):
-    table = Table(title=title)
-    for col in FIELD_NAMES:
-        table.add_column(col.upper())
+    table = Table(title=title, box=box.SIMPLE_HEAVY)
 
-    key_map = {
-        ExpenseField.DATE: lambda x: x.date,
-        ExpenseField.AMOUNT: lambda x: x.amount,
-        ExpenseField.ID: lambda x: x.id,
-    }
+    table.add_column("ID", style="dim", width=4)
+    table.add_column("DATE", style="white")
+    table.add_column("CATEGORY", style="bold cyan")
+    table.add_column("DESCRIPTION", style="white")
+    table.add_column("AMOUNT", style="bold green", justify="right")
 
-    sorted_data = sorted(data, key=key_map[sort_key], reverse=reverse)
-
-    for expense in sorted_data:
+    for expense in data:
         table.add_row(
             str(expense.id),
             str(expense.date),
