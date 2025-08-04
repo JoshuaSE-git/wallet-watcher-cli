@@ -149,20 +149,20 @@ def modify_expense(
     if not target_expense:
         raise ValueError(f"No expense found with ID {id}")
 
-    modified_expense = copy.deepcopy(target_expense)
+    original_expense = copy.deepcopy(target_expense)
 
     if new_date is not None:
-        modified_expense.date = new_date
+        target_expense.date = new_date
     if new_category is not None:
-        modified_expense.category = new_category
+        target_expense.category = new_category
     if new_description is not None:
-        modified_expense.description = new_description
+        target_expense.description = new_description
     if new_amount is not None:
         if new_amount < Decimal("0.01"):
             raise ValueError("Amount must be greater than 0.01")
-        modified_expense.amount = new_amount
+        target_expense.amount = new_amount
 
-    return data, target_expense, modified_expense
+    return data, original_expense, target_expense
 
 
 def calculate_total(data: List[Expense]) -> float:

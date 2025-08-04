@@ -9,21 +9,25 @@ from typing import List
 
 
 def test_add_expense(expense_list):
-    new_expense: Expense = core.add_expense(
+    new_expense = core.add_expense(
         expense_list,
         Decimal("5.00"),
         "snack",
-        dt.datetime.fromisoformat("2025-06-08"),
+        dt.datetime.fromisoformat("2025-06-08").date(),
         "Food",
     )
 
     assert new_expense == Expense(
-        4, dt.datetime.fromisoformat("2025-06-08"), "Food", "snack", Decimal("5.00")
+        4,
+        dt.datetime.fromisoformat("2025-06-08").date(),
+        "Food",
+        "snack",
+        Decimal("5.00"),
     )
 
 
 def test_add_expense_defaults(expense_list):
-    new_expense: Expense = core.add_expense(expense_list, Decimal("345"))
+    new_expense = core.add_expense(expense_list, Decimal("345"))
 
     assert new_expense == Expense(
         4,
@@ -35,13 +39,15 @@ def test_add_expense_defaults(expense_list):
 
 
 def test_add_expense_defaults_2(expense_list_2):
-    new_expense: Expense = core.add_expense(
-        expense_list_2, Decimal("21"), date=dt.datetime.fromisoformat("2025-06-13")
+    new_expense = core.add_expense(
+        expense_list_2,
+        Decimal("21"),
+        date=dt.datetime.fromisoformat("2025-06-13").date(),
     )
 
     assert new_expense == Expense(
         10,
-        dt.datetime.fromisoformat("2025-06-13"),
+        dt.datetime.fromisoformat("2025-06-13").date(),
         DEFAULT_CATEGORY,
         DEFAULT_DESCRIPTION,
         Decimal("21"),
@@ -50,7 +56,7 @@ def test_add_expense_defaults_2(expense_list_2):
 
 def test_add_expense_invalid_amount():
     with pytest.raises(ValueError) as excinfo:
-        core.add_expense([], Decimal("0.009"))
+        core.add_expense([], Decimal("0.0009"))
 
     assert excinfo.type is ValueError
     assert "Amount must be greater than 0.01" in str(excinfo.value)
@@ -64,14 +70,14 @@ def test_delete_expenses_matching_id(expense_list):
     correct_data: List[Expense] = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -89,7 +95,7 @@ def test_delete_expenses_matching_id_2(expense_list):
     correct_data: List[Expense] = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -107,7 +113,7 @@ def test_delete_expenses_matching_category(expense_list):
     correct_data: List[Expense] = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -119,7 +125,7 @@ def test_delete_expenses_matching_category(expense_list):
 
 def test_delete_expenses_matching_date(expense_list):
     strategy = core.filter_by_matching(
-        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-01")
+        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-01").date()
     )
 
     new_data, _ = core.delete_expenses(expense_list, strategy)
@@ -127,7 +133,7 @@ def test_delete_expenses_matching_date(expense_list):
     correct_data: List[Expense] = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -147,7 +153,7 @@ def test_delete_expenses_no_match(expense_list):
 
 def test_delete_expenses_matching_combo(expense_list):
     strategy = core.filter_by_matching(
-        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-01")
+        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-01").date()
     )
     strategy2 = core.filter_by_matching(ExpenseField.CATEGORY, "Food")
     combo_strategy = core.combine_filters_any(strategy, strategy2)
@@ -157,7 +163,7 @@ def test_delete_expenses_matching_combo(expense_list):
     correct_data: List[Expense] = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -169,14 +175,12 @@ def test_delete_expenses_matching_combo(expense_list):
 
 # wallet delete --max-amount 20.50
 def test_delete_expenses_comparison_amount_max(expense_list):
-    strategy = core.filter_by_comparison(
-        ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("20.50")
-    )
+    strategy = core.filter_by_range(ExpenseField.AMOUNT, None, Decimal("20.50"))
     new_data, _ = core.delete_expenses(expense_list, strategy)
-    correct_data: List[Expense] = [
+    correct_data = [
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
@@ -188,14 +192,12 @@ def test_delete_expenses_comparison_amount_max(expense_list):
 
 # wallet delete min-amount 20.50
 def test_delete_expenses_comparison_amount_min(expense_list):
-    strategy = core.filter_by_comparison(
-        ExpenseField.AMOUNT, Comparator.GREATER_THAN_EQUAL, Decimal("20.50")
-    )
+    strategy = core.filter_by_range(ExpenseField.AMOUNT, Decimal("20.50"), None)
     new_data, _ = core.delete_expenses(expense_list, strategy)
     correct_data: List[Expense] = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
@@ -207,16 +209,16 @@ def test_delete_expenses_comparison_amount_min(expense_list):
 
 # wallete delete --max-date 2025-06-02
 def test_delete_expenses_comparison_date_max(expense_list):
-    strategy = core.filter_by_comparison(
+    strategy = core.filter_by_range(
         ExpenseField.DATE,
-        Comparator.LESS_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-02"),
+        None,
+        dt.datetime.fromisoformat("2025-06-02").date(),
     )
-    data = core.delete_expenses(expense_list, strategy)
+    data, _ = core.delete_expenses(expense_list, strategy)
     correct_data: List[Expense] = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -228,23 +230,21 @@ def test_delete_expenses_comparison_date_max(expense_list):
 
 # wallet delete --min-date 2025-06-02
 def test_delete_expenses_comparison_date_min(expense_list):
-    strategy = core.filter_by_comparison(
-        ExpenseField.DATE,
-        Comparator.GREATER_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-02"),
+    strategy = core.filter_by_range(
+        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-02").date(), None
     )
-    data = core.delete_expenses(expense_list, strategy)
+    data, _ = core.delete_expenses(expense_list, strategy)
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
         ),
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
@@ -259,17 +259,17 @@ def test_delete_expenses_comparison_combo(expense_list):
     strategy1 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.GREATER_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-02"),
+        dt.datetime.fromisoformat("2025-06-02").date(),
     )
     strategy2 = core.filter_by_comparison(
         ExpenseField.AMOUNT, Comparator.GREATER_THAN_EQUAL, Decimal("20.00")
     )
     strategy = core.combine_filters_any(*[strategy1, strategy2])
-    data = core.delete_expenses(expense_list, strategy)
+    data, _ = core.delete_expenses(expense_list, strategy)
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
@@ -286,14 +286,14 @@ def test_list_expenses_matching_id(expense_list):
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
         ),
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
@@ -310,7 +310,7 @@ def test_list_expenses_matching_category(expense_list):
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
@@ -323,13 +323,13 @@ def test_list_expenses_matching_category(expense_list):
 # wallet list --date 2025-06-03
 def test_list_expenses_matching_date(expense_list):
     strategy = core.filter_by_matching(
-        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-03")
+        ExpenseField.DATE, dt.datetime.fromisoformat("2025-06-03").date()
     )
     data = core.filter_expenses(expense_list, strategy)
     correct_data = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -348,14 +348,14 @@ def test_list_expenses_matching_amount(expense_list):
     correct_data = [
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -376,7 +376,7 @@ def test_list_expenses_matching_combo(expense_list):
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
@@ -399,7 +399,7 @@ def test_list_expenses_comparison_amount(expense_list):
     correct_data = [
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -414,26 +414,26 @@ def test_list_expenses_comparison_date(expense_list):
     strategy1 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.GREATER_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-01-01"),
+        dt.datetime.fromisoformat("2025-01-01").date(),
     )
     strategy2 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.LESS_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-01"),
+        dt.datetime.fromisoformat("2025-06-01").date(),
     )
     strategy = core.combine_filters_all(*[strategy1, strategy2])
     data = core.filter_expenses(expense_list, strategy)
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
         ),
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
@@ -449,12 +449,12 @@ def test_list_expenses_combo(expense_list_2):
     strategy1 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.GREATER_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-01-01"),
+        dt.datetime.fromisoformat("2025-01-01").date(),
     )
     strategy2 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.LESS_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-01"),
+        dt.datetime.fromisoformat("2025-06-01").date(),
     )
     strategy3 = core.filter_by_matching(ExpenseField.CATEGORY, *["Food", "Gaming"])
     strategy4 = core.filter_by_comparison(
@@ -465,14 +465,14 @@ def test_list_expenses_combo(expense_list_2):
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-04-01"),
+            dt.datetime.fromisoformat("2025-04-01").date(),
             "Food",
             "Arbys",
             Decimal("5.23"),
         ),
         Expense(
             9,
-            dt.datetime.fromisoformat("2025-05-09"),
+            dt.datetime.fromisoformat("2025-05-09").date(),
             "Gaming",
             "N/A",
             Decimal("3"),
@@ -488,12 +488,12 @@ def test_delete_expenses_combo(expense_list_2):
     strategy1 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.GREATER_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-06-01"),
+        dt.datetime.fromisoformat("2025-06-01").date(),
     )
     strategy2 = core.filter_by_comparison(
         ExpenseField.DATE,
         Comparator.LESS_THAN_EQUAL,
-        dt.datetime.fromisoformat("2025-07-01"),
+        dt.datetime.fromisoformat("2025-07-01").date(),
     )
 
     strategy1_2 = core.combine_filters_all(strategy1, strategy2)
@@ -502,11 +502,11 @@ def test_delete_expenses_combo(expense_list_2):
         ExpenseField.AMOUNT, Comparator.LESS_THAN_EQUAL, Decimal("1")
     )
     strategy = core.combine_filters_any(*[strategy1_2, strategy3, strategy4])
-    data = core.delete_expenses(expense_list_2, strategy)
+    data, _ = core.delete_expenses(expense_list_2, strategy)
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-04-01"),
+            dt.datetime.fromisoformat("2025-04-01").date(),
             "Food",
             "Arbys",
             Decimal("5.23"),
@@ -518,25 +518,25 @@ def test_delete_expenses_combo(expense_list_2):
 
 # wallet edit --id 1 --amount 100
 def test_modify_expenses_amount(expense_list):
-    data = core.modify_expense(expense_list, 1, new_amount=Decimal("100"))
+    data, _, _ = core.modify_expense(expense_list, 1, new_amount=Decimal("100"))
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("100"),
         ),
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -548,32 +548,32 @@ def test_modify_expenses_amount(expense_list):
 
 # wallet edit --id 2 --amount 100 --date 2025-06-02 --
 def test_modify_expenses_all(expense_list):
-    data = core.modify_expense(
+    data, _, _ = core.modify_expense(
         expense_list,
         1,
         new_amount=Decimal("100"),
-        new_date=dt.datetime.fromisoformat("2025-06-02"),
+        new_date=dt.datetime.fromisoformat("2025-06-02").date(),
         new_category="Gaming",
         new_description="N/A",
     )
     correct_data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-02"),
+            dt.datetime.fromisoformat("2025-06-02").date(),
             "Gaming",
             "N/A",
             Decimal("100"),
         ),
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -585,24 +585,24 @@ def test_modify_expenses_all(expense_list):
 
 @pytest.fixture
 def expense_list():
-    data: List[Expense] = [
+    data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
         ),
         Expense(
             2,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("20.50"),
@@ -614,45 +614,45 @@ def expense_list():
 
 @pytest.fixture
 def expense_list_2():
-    data: List[Expense] = [
+    data = [
         Expense(
             1,
-            dt.datetime.fromisoformat("2025-04-01"),
+            dt.datetime.fromisoformat("2025-04-01").date(),
             "Food",
             "Arbys",
             Decimal("5.23"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-05-09"),
+            dt.datetime.fromisoformat("2025-05-09").date(),
             "General",
             "N/A",
             Decimal("1"),
         ),
         Expense(
             9,
-            dt.datetime.fromisoformat("2025-05-09"),
+            dt.datetime.fromisoformat("2025-05-09").date(),
             "Gaming",
             "N/A",
             Decimal("3"),
         ),
         Expense(
             3,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Food",
             "Wendys",
             Decimal("10.23"),
         ),
         Expense(
             8,
-            dt.datetime.fromisoformat("2025-06-01"),
+            dt.datetime.fromisoformat("2025-06-01").date(),
             "Gaming",
             "League",
             Decimal("50.00"),
         ),
         Expense(
             4,
-            dt.datetime.fromisoformat("2025-06-03"),
+            dt.datetime.fromisoformat("2025-06-03").date(),
             "School",
             "Textbooks",
             Decimal("2"),

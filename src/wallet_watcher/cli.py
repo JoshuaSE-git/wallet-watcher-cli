@@ -151,7 +151,7 @@ def handle_delete(args, console):
     strategies = generate_strategy_list(args)
     combined_strategy = core.combine_filters_any(*strategies)
 
-    user_data_path = get_user_data()
+    user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
     modified_data, deleted_expenses = core.delete_expenses(
         original_data, combined_strategy
@@ -173,7 +173,7 @@ def handle_list(args, console):
         "id": lambda x: x.id,
     }
 
-    user_data_path = get_user_data()
+    user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
     filtered_data: List[Expense] = core.filter_expenses(
         original_data, combined_strategy
@@ -192,7 +192,7 @@ def handle_list(args, console):
 
 
 def handle_add(args, console):
-    user_data_path = get_user_data()
+    user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
     new_expense: Expense = core.add_expense(
         original_data, args.amount, args.description, args.date, args.category
@@ -213,7 +213,7 @@ def handle_add(args, console):
 
 
 def handle_edit(args, console):
-    user_data_path = get_user_data()
+    user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
     modified_data, original_expense, modified_expense = core.modify_expense(
         original_data,
@@ -282,7 +282,7 @@ def parse_description(description: str) -> str:
     return description
 
 
-def get_user_data() -> str:
+def get_user_data_path() -> str:
     return os.path.join(get_os_data_path(), "wallet-watcher/finances.csv")
 
 
