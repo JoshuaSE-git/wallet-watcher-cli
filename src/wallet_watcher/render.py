@@ -1,6 +1,6 @@
 from rich import box
 from rich.table import Table
-from wallet_watcher._types import Expense, ExpenseField
+from wallet_watcher._types import Expense
 from typing import List
 
 

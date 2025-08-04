@@ -2,26 +2,26 @@ import os
 import sys
 import csv
 import argparse
+import datetime as dt
+from decimal import Decimal
+from typing import List, Dict
+
+from rich.console import Console
+
 import wallet_watcher.constants as const
 import wallet_watcher.core as core
 import wallet_watcher.adapter as adapter
 import wallet_watcher.render as render
-import datetime as dt
-from rich.console import Console
 from wallet_watcher._types import Expense, ExpenseField
-from typing import List, Dict
-from decimal import Decimal
 
 
 def main() -> None:
     initialize_user_data()
     parser = initialize_parsers()
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
     console = Console()
-    if hasattr(args, "func"):
-        args.func(args, console)
-
-    return
+    if hasattr(parsed_args, "func"):
+        parsed_args.func(parsed_args, console)
 
 
 def initialize_parsers():
@@ -112,29 +112,7 @@ def initialize_parsers():
     return parser
 
 
-def handle_add(args, console):
-    path = get_user_data()
-    data = adapter.convert_csv_to_expenses(load_csv(path))
-    new_expense: Expense = core.add_expense(
-        data, args.amount, args.description, args.date, args.category
-    )
-    new_csv_row: Dict[str, str] = adapter.convert_expense_to_csv_row(new_expense)
-
-    append_csv(path, new_csv_row)
-
-    console.print()
-    console.print("[bold green]✅ Expense Added![/]")
-    console.print(f"[bold white]ID:[/]          {new_expense.id}")
-    console.print(f"[bold white]Date:[/]        {new_expense.date}")
-    console.print(f"[bold white]Category:[/]    [cyan]{new_expense.category}[/]")
-    console.print(f"[bold white]Description:[/] {new_expense.description}")
-    console.print(
-        f"[bold white]Amount:[/]      [bold green]${new_expense.amount:.2f}[/]"
-    )
-    console.print()
-
-
-def group_filters(args):
+def generate_strategy_list(args):
     filters = {
         "matching": {
             ExpenseField.ID: args.id,
@@ -154,75 +132,40 @@ def group_filters(args):
         },
     }
 
-    return filters
+    strategies = []
+    for match_filter, value in filters["matching"].items():
+        if value is not None:
+            strategies.append(core.filter_by_matching(match_filter, *value))
+
+    for range_filter, value in filters["range"].items():
+        if value["min"] is None and value["max"] is None:
+            continue
+        strategies.append(
+            core.filter_by_range(range_filter, value["min"], value["max"])
+        )
+
+    return strategies
 
 
 def handle_delete(args, console):
-    filters = group_filters(args)
-    strategies = []
-    for match_filter, value in filters["matching"].items():
-        if value is not None:
-            strategies.append(core.filter_by_matching(match_filter, *value))
-    for range_filter, value in filters["range"].items():
-        if value["min"] is None and value["max"] is None:
-            continue
-        strategies.append(
-            core.filter_by_range(range_filter, value["min"], value["max"])
-        )
-    final_strategy = core.combine_filters_any(*strategies)
-    path = get_user_data()
+    strategies = generate_strategy_list(args)
+    combined_strategy = core.combine_filters_any(*strategies)
 
-    data = adapter.convert_csv_to_expenses(load_csv(path))
-    after_data, deleted_data = core.delete_expenses(data, final_strategy)
-    csv = adapter.convert_expenses_to_csv(after_data)
-    save_csv(path, csv)
-
-    console.print(render.render_table(deleted_data, title="Deleted Expenses"))
-    console.print(render.render_table(after_data, title="Remaining Expenses"))
-
-    return
-
-
-def handle_edit(args, console):
-    path = get_user_data()
-    data = adapter.convert_csv_to_expenses(load_csv(path))
-    after_data, before, after = core.modify_expense(
-        data,
-        id=args.id,
-        new_amount=args.amount if args.amount else None,
-        new_date=args.date if args.date else None,
-        new_category=args.category if args.category else None,
-        new_description=args.description if args.description else None,
+    user_data_path = get_user_data()
+    original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
+    modified_data, deleted_expenses = core.delete_expenses(
+        original_data, combined_strategy
     )
-    csv = adapter.convert_expenses_to_csv(after_data)
-    save_csv(path, csv)
+    modified_csv = adapter.convert_expenses_to_csv(modified_data)
+    save_csv(user_data_path, modified_csv)
 
-    before_table = render.render_table([before], title="Before")
-    after_table = render.render_table([after], title="After")
-
-    console.print(before_table)
-    console.print(after_table)
-
-    return
+    console.print(render.render_table(deleted_expenses, title="Deleted Expenses"))
+    console.print(render.render_table(modified_data, title="Remaining Expenses"))
 
 
 def handle_list(args, console):
-    filters = group_filters(args)
-    strategies = []
-    for match_filter, value in filters["matching"].items():
-        if value is not None:
-            strategies.append(core.filter_by_matching(match_filter, *value))
-    for range_filter, value in filters["range"].items():
-        if value["min"] is None and value["max"] is None:
-            continue
-        strategies.append(
-            core.filter_by_range(range_filter, value["min"], value["max"])
-        )
-    final_strategy = core.combine_filters_all(*strategies)
-    path = get_user_data()
-
-    data = adapter.convert_csv_to_expenses(load_csv(path))
-    after_data: List[Expense] = core.filter_expenses(data, final_strategy)
+    strategies = generate_strategy_list(args)
+    combined_strategy = core.combine_filters_all(*strategies)
 
     key_map = {
         "date": lambda x: x.date,
@@ -230,17 +173,63 @@ def handle_list(args, console):
         "id": lambda x: x.id,
     }
 
-    sorted_data = sorted(after_data, key=key_map[args.sort_by], reverse=args.desc)
-    console.print(render.render_table(sorted_data))
+    user_data_path = get_user_data()
+    original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
+    filtered_data: List[Expense] = core.filter_expenses(
+        original_data, combined_strategy
+    )
+    sorted_data = sorted(filtered_data, key=key_map[args.sort_by], reverse=args.desc)
 
-    total = core.calculate_total(sorted_data)
-    entry_count = len(sorted_data)
-    total_entries = len(data)
-    console.print(f"[bold white]Filtered Total:[/] [bold green]${total:.2f}[/]")
+    console.print(render.render_table(sorted_data))
+    total_expense_amount = core.calculate_total(sorted_data)
     console.print(
-        f"[bold white]Entries:[/] [bold yellow]{entry_count}/{total_entries}[/]"
+        f"[bold white]Filtered Total:[/] [bold green]${total_expense_amount:.2f}[/]"
+    )
+    console.print(
+        f"[bold white]Entries:[/] [bold yellow]{len(sorted_data)}/{len(original_data)}[/]"
     )
     console.print()
+
+
+def handle_add(args, console):
+    user_data_path = get_user_data()
+    original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
+    new_expense: Expense = core.add_expense(
+        original_data, args.amount, args.description, args.date, args.category
+    )
+    new_csv_row: Dict[str, str] = adapter.convert_expense_to_csv_row(new_expense)
+    append_csv(user_data_path, new_csv_row)
+
+    console.print()
+    console.print("[bold green]✅ Expense Added![/]")
+    console.print(f"[bold white]ID:[/]          {new_expense.id}")
+    console.print(f"[bold white]Date:[/]        {new_expense.date}")
+    console.print(f"[bold white]Category:[/]    [cyan]{new_expense.category}[/]")
+    console.print(f"[bold white]Description:[/] {new_expense.description}")
+    console.print(
+        f"[bold white]Amount:[/]      [bold green]${new_expense.amount:.2f}[/]"
+    )
+    console.print()
+
+
+def handle_edit(args, console):
+    user_data_path = get_user_data()
+    original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
+    modified_data, original_expense, modified_expense = core.modify_expense(
+        original_data,
+        id=args.id,
+        new_amount=args.amount if args.amount else None,
+        new_date=args.date if args.date else None,
+        new_category=args.category if args.category else None,
+        new_description=args.description if args.description else None,
+    )
+    modified_csv = adapter.convert_expenses_to_csv(modified_data)
+    save_csv(user_data_path, modified_csv)
+
+    before_table = render.render_table([original_expense], title="Before")
+    after_table = render.render_table([modified_expense], title="After")
+    console.print(before_table)
+    console.print(after_table)
 
 
 def parse_amount(amount: str) -> Decimal:
@@ -287,7 +276,7 @@ def parse_category(category: str) -> str:
 def parse_description(description: str) -> str:
     if len(description) > 50:
         raise argparse.ArgumentTypeError(
-            f"Desscription must be less than 50 characters: {description}"
+            f"Description must be less than 50 characters: {description}"
         )
 
     return description
@@ -298,7 +287,7 @@ def get_user_data() -> str:
 
 
 def get_os_data_path() -> str:
-    user_os: str = sys.platform
+    user_os = sys.platform
     if user_os == const.LINUX:
         return os.environ.get(
             const.ENV_XDG_DATA_HOME, os.path.expanduser(const.LINUX_APPDATA_PATH)
@@ -314,10 +303,10 @@ def get_os_data_path() -> str:
 
 
 def initialize_user_data() -> None:
-    app_data_dir_path: str = os.path.join(get_os_data_path(), const.APP_DIRECTORY_NAME)
+    app_data_dir_path = os.path.join(get_os_data_path(), const.APP_DIRECTORY_NAME)
     os.makedirs(app_data_dir_path, mode=0o700, exist_ok=True)
 
-    user_data_path: str = os.path.join(app_data_dir_path, const.USER_DATA_FILENAME)
+    user_data_path = os.path.join(app_data_dir_path, const.USER_DATA_FILENAME)
     if not os.path.exists(user_data_path):
         with open(user_data_path, "w", newline="") as csvfile:
             csv_writer: csv.DictWriter = csv.DictWriter(csvfile, const.FIELD_NAMES)
