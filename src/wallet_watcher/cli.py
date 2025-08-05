@@ -159,8 +159,22 @@ def handle_delete(args, console):
     modified_csv = adapter.convert_expenses_to_csv(modified_data)
     save_csv(user_data_path, modified_csv)
 
+    num_deleted = len(deleted_expenses)
+    deleted_amount = core.calculate_total(deleted_expenses)["total"]
+
+    if not num_deleted:
+        console.print()
+        console.print("[bold yellow]⚠️ No expenses matched the given filters.[/]")
+        console.print("[dim]Nothing was deleted.[/]")
+        console.print()
+        return
+
+    console.print()
+    console.print(f"[bold red]🗑️ {num_deleted} expense(s) deleted successfully![/]")
+    console.print()
     console.print(render.render_table(deleted_expenses, title="Deleted Expenses"))
-    console.print(render.render_table(modified_data, title="Remaining Expenses"))
+    console.print(f"[bold white]Total Removed:[/] [bold red]${deleted_amount:.2f}[/]")
+    console.print()
 
 
 def handle_list(args, console):
@@ -179,11 +193,12 @@ def handle_list(args, console):
         original_data, combined_strategy
     )
     sorted_data = sorted(filtered_data, key=key_map[args.sort_by], reverse=args.desc)
+    expense_summary = core.calculate_total(sorted_data)
+    total_expenses = expense_summary["total"]
 
     console.print(render.render_table(sorted_data))
-    total_expense_amount = core.calculate_total(sorted_data)
     console.print(
-        f"[bold white]Filtered Total:[/] [bold green]${total_expense_amount:.2f}[/]"
+        f"[bold white]Filtered Total:[/] [bold green]${total_expenses:.2f}[/]"
     )
     console.print(
         f"[bold white]Entries:[/] [bold yellow]{len(sorted_data)}/{len(original_data)}[/]"
@@ -215,7 +230,7 @@ def handle_add(args, console):
 def handle_edit(args, console):
     user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
-    modified_data, original_expense, modified_expense = core.modify_expense(
+    modified_data, changes = core.modify_expense(
         original_data,
         id=args.id,
         new_amount=args.amount if args.amount else None,
@@ -226,10 +241,21 @@ def handle_edit(args, console):
     modified_csv = adapter.convert_expenses_to_csv(modified_data)
     save_csv(user_data_path, modified_csv)
 
-    before_table = render.render_table([original_expense], title="Before")
-    after_table = render.render_table([modified_expense], title="After")
-    console.print(before_table)
-    console.print(after_table)
+    console.print()
+    console.print(f"[bold yellow]✏️ Expense Edited[/] (ID: [bold]{args.id}[/])\n")
+    console.print("[bold white]Changed:[/]")
+    for field, (old, new) in changes.items():
+        style_old = "dim"
+        style_new = "bold green" if field == "amount" else "bold cyan"
+
+        if field == "amount":
+            old = f"${old}" if not str(old).startswith("$") else old
+            new = f"${new}" if not str(new).startswith("$") else new
+
+        console.print(
+            f"  [bold]{field.capitalize()}:[/] [{style_old}]{old}[/] ➜ [{style_new}]{new}[/]"
+        )
+    console.print()
 
 
 def parse_amount(amount: str) -> Decimal:

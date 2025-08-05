@@ -1,6 +1,6 @@
 import copy
 import datetime as dt
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Dict
 from decimal import ROUND_HALF_EVEN, Decimal
 
 from wallet_watcher._types import Expense, FilterStrategy, Comparator, ExpenseField
@@ -138,7 +138,7 @@ def modify_expense(
     new_category: str | None = None,
     new_description: str | None = None,
     new_amount: Decimal | None = None,
-) -> Tuple[List[Expense], Expense, Expense]:
+) -> Tuple[List[Expense], Dict]:
     data = [copy.copy(expense) for expense in data]
 
     target_expense = None
@@ -149,28 +149,37 @@ def modify_expense(
     if not target_expense:
         raise ValueError(f"No expense found with ID {id}")
 
-    original_expense = copy.deepcopy(target_expense)
-
+    changes = {}
     if new_date is not None:
+        changes["date"] = (target_expense.date, new_date)
         target_expense.date = new_date
     if new_category is not None:
+        changes["category"] = (target_expense.category[:16], new_category[:16])
         target_expense.category = new_category
     if new_description is not None:
+        changes["description"] = (target_expense.description[:16], new_description[:16])
         target_expense.description = new_description
     if new_amount is not None:
         if new_amount < Decimal("0.01"):
             raise ValueError("Amount must be greater than 0.01")
+        new_amount = Decimal(new_amount)
+        new_amount = new_amount.quantize(Decimal(".01"), rounding=ROUND_HALF_EVEN)
+        changes["amount"] = (target_expense.amount, new_amount)
         target_expense.amount = new_amount
 
-    return data, original_expense, target_expense
+    return data, changes
 
 
-def calculate_total(data: List[Expense]) -> float:
-    total_expenses = 0
+def calculate_total(data: List[Expense]) -> Dict:
+    totals = {"total": 0, "category": {}}
+
     for expense in data:
-        total_expenses += expense.amount
+        totals["total"] += expense.amount
+        totals["category"][expense.category] = (
+            totals["category"].get(expense.category, 0) + expense.amount
+        )
 
-    return float(total_expenses)
+    return totals
 
 
 def _get_next_id(data: List[Expense]) -> int:
