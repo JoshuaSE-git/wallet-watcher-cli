@@ -20,8 +20,22 @@ def main() -> None:
     parser = initialize_parsers()
     parsed_args = parser.parse_args()
     console = Console()
+
     if hasattr(parsed_args, "func"):
         parsed_args.func(parsed_args, console)
+    else:
+        console.print("[bold green]💰 wallet[/] — Command-line Expense Tracker\n")
+        console.print("[bold white]Usage:[/] wallet \\[command] \\[options]\n")
+        console.print("[bold white]Common Commands:[/]")
+        console.print("  [cyan]add[/]       Add a new expense entry")
+        console.print("  [cyan]list[/]      View expenses with optional filters")
+        console.print(
+            "  [cyan]delete[/]    Remove expenses by ID, category, date, etc."
+        )
+        console.print("  [cyan]edit[/]      Modify an existing expense")
+        console.print("  [cyan]undo[/]      Revert recent changes")
+        console.print("  [cyan]summary[/]   Show category breakdown and stats\n")
+        console.print("Run '[bold]wallet \\[command] --help[/]' for more info.")
 
 
 def initialize_parsers():
@@ -30,18 +44,50 @@ def initialize_parsers():
 
     add_parser = subparsers.add_parser("add")
     add_parser.set_defaults(func=handle_add)
-    add_parser.add_argument("amount", type=parse_amount)
-    add_parser.add_argument("-d", "--date", type=parse_date, default=None)
-    add_parser.add_argument("-c", "--category", type=parse_category, default=None)
-    add_parser.add_argument("-s", "--description", type=parse_description, default=None)
+    add_parser.add_argument(
+        "amount", type=parse_amount, help="Amount in dollars (e.g. 25.99)"
+    )
+    add_parser.add_argument(
+        "-d",
+        "--date",
+        type=parse_date,
+        default=None,
+        help="Date of expense (YYYY-MM-DD)",
+    )
+    add_parser.add_argument(
+        "-c",
+        "--category",
+        type=parse_category,
+        default=None,
+        help="Expense category (e.g. 'Food')",
+    )
+    add_parser.add_argument(
+        "-s",
+        "--description",
+        type=parse_description,
+        default=None,
+        help="Expense description",
+    )
 
     delete_parser = subparsers.add_parser("delete")
     delete_parser.set_defaults(func=handle_delete)
     delete_parser.add_argument(
-        "-i", "--id", nargs="+", action="extend", type=parse_id, default=None
+        "-i",
+        "--id",
+        nargs="+",
+        action="extend",
+        type=parse_id,
+        default=None,
+        help="One or more Expense IDs to delete",
     )
     delete_parser.add_argument(
-        "-d", "--date", nargs="+", action="extend", type=parse_date, default=None
+        "-d",
+        "--date",
+        nargs="+",
+        action="extend",
+        type=parse_date,
+        default=None,
+        help="Delete by one or more dates",
     )
     delete_parser.add_argument(
         "-c",
@@ -50,6 +96,7 @@ def initialize_parsers():
         action="extend",
         type=parse_category,
         default=None,
+        help="Delete by one or more categories",
     )
     delete_parser.add_argument(
         "-s",
@@ -58,29 +105,72 @@ def initialize_parsers():
         action="extend",
         type=parse_description,
         default=None,
+        help="Delete by description",
     )
-    delete_parser.add_argument("--min-date", type=parse_date, default=None)
-    delete_parser.add_argument("--max-date", type=parse_date, default=None)
-    delete_parser.add_argument("--min-amount", type=parse_amount, default=None)
-    delete_parser.add_argument("--max-amount", type=parse_amount, default=None)
+    delete_parser.add_argument(
+        "--min-date", type=parse_date, default=None, help="Delete by minimum date range"
+    )
+    delete_parser.add_argument(
+        "--max-date", type=parse_date, default=None, help="Delete by maximum date range"
+    )
+    delete_parser.add_argument(
+        "--min-amount",
+        type=parse_amount,
+        default=None,
+        help="Delete by minimum amount range",
+    )
+    delete_parser.add_argument(
+        "--max-amount",
+        type=parse_amount,
+        default=None,
+        help="Delete by maximum amount range",
+    )
 
     edit_parser = subparsers.add_parser("edit")
     edit_parser.set_defaults(func=handle_edit)
-    edit_parser.add_argument("-i", "--id", required=True, type=parse_id)
-    edit_parser.add_argument("-a", "--amount", type=parse_amount, default=None)
-    edit_parser.add_argument("-d", "--date", type=parse_date, default=None)
-    edit_parser.add_argument("-c", "--category", type=parse_category, default=None)
     edit_parser.add_argument(
-        "-s", "--description", type=parse_description, default=None
+        "-i", "--id", required=True, type=parse_id, help="ID of target expense"
+    )
+    edit_parser.add_argument(
+        "-a",
+        "--amount",
+        type=parse_amount,
+        default=None,
+        help="Modify amount in dollars (e.g. 25.99)",
+    )
+    edit_parser.add_argument(
+        "-d", "--date", type=parse_date, default=None, help="Modify date (YYYY-MM-DD)"
+    )
+    edit_parser.add_argument(
+        "-c", "--category", type=parse_category, default=None, help="Modify category"
+    )
+    edit_parser.add_argument(
+        "-s",
+        "--description",
+        type=parse_description,
+        default=None,
+        help="Modify description",
     )
 
     list_parser = subparsers.add_parser("list")
     list_parser.set_defaults(func=handle_list)
     list_parser.add_argument(
-        "-i", "--id", nargs="+", action="extend", type=parse_id, default=None
+        "-i",
+        "--id",
+        nargs="+",
+        action="extend",
+        type=parse_id,
+        default=None,
+        help="Filter by one or more IDs",
     )
     list_parser.add_argument(
-        "-d", "--date", nargs="+", action="extend", type=parse_date, default=None
+        "-d",
+        "--date",
+        nargs="+",
+        action="extend",
+        type=parse_date,
+        default=None,
+        help="Filter by one or more dates (YYYY-MM-DD)",
     )
     list_parser.add_argument(
         "-c",
@@ -89,6 +179,7 @@ def initialize_parsers():
         action="extend",
         type=parse_category,
         default=None,
+        help="Filter by one or more categories",
     )
     list_parser.add_argument(
         "-s",
@@ -97,17 +188,37 @@ def initialize_parsers():
         action="extend",
         type=parse_description,
         default=None,
+        help="Filter by description",
     )
-
-    list_parser.add_argument("--min-date", type=parse_date, default=None)
-    list_parser.add_argument("--max-date", type=parse_date, default=None)
-    list_parser.add_argument("--min-amount", type=parse_amount, default=None)
-    list_parser.add_argument("--max-amount", type=parse_amount, default=None)
 
     list_parser.add_argument(
-        "--sort-by", choices=["date", "id", "amount"], default="date"
+        "--min-date", type=parse_date, default=None, help="Filter by minimum date range"
     )
-    list_parser.add_argument("--desc", action="store_true")
+    list_parser.add_argument(
+        "--max-date", type=parse_date, default=None, help="Filter by maximum date range"
+    )
+    list_parser.add_argument(
+        "--min-amount",
+        type=parse_amount,
+        default=None,
+        help="Filter by minimum amount range",
+    )
+    list_parser.add_argument(
+        "--max-amount",
+        type=parse_amount,
+        default=None,
+        help="Filter by maximum amount range",
+    )
+
+    list_parser.add_argument(
+        "--sort-by",
+        choices=["date", "id", "amount"],
+        default="date",
+        help="Sort by date, id, or amount (default ascending)",
+    )
+    list_parser.add_argument(
+        "--desc", action="store_true", help="Sort in descending order"
+    )
 
     return parser
 
