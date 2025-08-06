@@ -189,9 +189,15 @@ def handle_list(args, console):
 
     user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
-    filtered_data: List[Expense] = core.filter_expenses(
-        original_data, combined_strategy
-    )
+    filtered_data = core.filter_expenses(original_data, combined_strategy)
+
+    if not filtered_data:
+        console.print()
+        console.print("[bold yellow]⚠️ No expenses matched the given filters.[/]")
+        console.print(args)
+        console.print()
+        return
+
     sorted_data = sorted(filtered_data, key=key_map[args.sort_by], reverse=args.desc)
     expense_summary = core.calculate_total(sorted_data)
     total_expenses = expense_summary["total"]
@@ -230,16 +236,31 @@ def handle_add(args, console):
 def handle_edit(args, console):
     user_data_path = get_user_data_path()
     original_data = adapter.convert_csv_to_expenses(load_csv(user_data_path))
-    modified_data, changes = core.modify_expense(
-        original_data,
-        id=args.id,
-        new_amount=args.amount if args.amount else None,
-        new_date=args.date if args.date else None,
-        new_category=args.category if args.category else None,
-        new_description=args.description if args.description else None,
-    )
-    modified_csv = adapter.convert_expenses_to_csv(modified_data)
-    save_csv(user_data_path, modified_csv)
+
+    try:
+        modified_data, changes = core.modify_expense(
+            original_data,
+            id=args.id,
+            new_amount=args.amount if args.amount else None,
+            new_date=args.date if args.date else None,
+            new_category=args.category if args.category else None,
+            new_description=args.description if args.description else None,
+        )
+        modified_csv = adapter.convert_expenses_to_csv(modified_data)
+        save_csv(user_data_path, modified_csv)
+    except ValueError:
+        console.print()
+        console.print(f"[bold red]⚠️ No expenses found for id: [cyan]{args.id}[/][/]")
+        console.print("[dim]Use 'wallet list' to see expenses.[/]")
+        console.print()
+        return
+
+    if not changes:
+        console.print()
+        console.print("[bold yellow]⚠️ No modifications were selected.[/]")
+        console.print("[dim]Use '-h' to see options.[/]")
+        console.print()
+        return
 
     console.print()
     console.print(f"[bold yellow]✏️ Expense Edited[/] (ID: [bold]{args.id}[/])\n")
