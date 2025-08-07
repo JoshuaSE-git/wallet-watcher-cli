@@ -4,6 +4,18 @@
 
 ## 📦 Installation
 
+Clone the repository and install locally:
+
+```bash
+git clone https://github.com/JoshuaSE-git/wallet-watcher-cli
+cd wallet-watcher-cli
+pip install .
+```
+
+Test installation with
+```bash
+wallet
+```
 
 ## ⚙️ Commands
 
