@@ -32,9 +32,7 @@ def main() -> None:
         console.print(
             "  [cyan]delete[/]    Remove expenses by ID, category, date, etc."
         )
-        console.print("  [cyan]edit[/]      Modify an existing expense")
-        console.print("  [cyan]undo[/]      Revert recent changes")
-        console.print("  [cyan]summary[/]   Show category breakdown and stats\n")
+        console.print("  [cyan]edit[/]      Modify an existing expense\n")
         console.print("Run '[bold]wallet \\[command] --help[/]' for more info.")
 
 
